@@ -22,11 +22,16 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Download Dobby
+      - name: Build Dobby
         run: |
-          mkdir -p Dobby/include
-          wget -q https://github.com/DeV144/HuyJIT-ModMenu/raw/main/Dobby/libdobby.a -O Dobby/libdobby.a
-          wget -q https://github.com/DeV144/HuyJIT-ModMenu/raw/main/Dobby/include/dobby.h -O Dobby/include/dobby.h
+          git clone https://github.com/jmpews/Dobby.git --depth 1
+          cd Dobby
+          # Собираем через официальный скрипт, он сам найдет тулчейн
+          ./scripts/build_ios.sh
+          # Копируем результат в нужную папку
+          mkdir -p ../Dobby/include
+          cp build/Dobby/libdobby.a ../Dobby/libdobby.a
+          cp include/dobby.h ../Dobby/include/dobby.h
 
       - name: Build dylib
         run: |
