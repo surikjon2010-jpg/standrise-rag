@@ -1,0 +1,8 @@
+Package: com.sam.standriserage
+Name: StandriseRage
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Rage cheat for Standrise Rework iOS
+Maintainer: sam
+Author: sam
+Section: Tweaks
