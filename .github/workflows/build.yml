@@ -22,12 +22,22 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Download Prebuilt Dobby
+      - name: Build Dobby
         run: |
-          mkdir -p Dobby/include
-          # Скачиваем готовую библиотеку и заголовок из надежного репозитория
-          wget -q https://github.com/DeV144/HuyJIT-ModMenu/raw/main/Dobby/libdobby.a -O Dobby/libdobby.a
-          wget -q https://github.com/DeV144/HuyJIT-ModMenu/raw/main/Dobby/include/dobby.h -O Dobby/include/dobby.h
+          git clone https://github.com/jmpews/Dobby.git --depth 1
+          cd Dobby
+          mkdir build && cd build
+          # Явно указываем компилятор из установленного Theos и архитектуру
+          cmake .. \
+            -DCMAKE_C_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang \
+            -DCMAKE_CXX_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang++ \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/ios.toolchain.cmake \
+            -DPLATFORM=OS64 \
+            -DARCHS=arm64
+          make -j4
+          mkdir -p ../../Dobby/include
+          cp libdobby.a ../../Dobby/libdobby.a
+          cp ../include/dobby.h ../../Dobby/include/dobby.h
 
       - name: Build dylib
         run: |
