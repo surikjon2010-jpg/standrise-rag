@@ -22,16 +22,32 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Build Dobby
+      - name: Build Dobby (Manual CMake)
         run: |
           git clone https://github.com/jmpews/Dobby.git --depth 1
           cd Dobby
-          # Собираем через официальный скрипт, он сам найдет тулчейн
-          ./scripts/build_ios.sh
-          # Копируем результат в нужную папку
-          mkdir -p ../Dobby/include
-          cp build/Dobby/libdobby.a ../Dobby/libdobby.a
-          cp include/dobby.h ../Dobby/include/dobby.h
+          mkdir build_for_ios_arm64 && cd build_for_ios_arm64
+          # Используем официальные флаги из документации Dobby для iOS
+          cmake .. \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/ios.toolchain.cmake \
+            -DPLATFORM=OS64 \
+            -DARCHS="arm64" \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DENABLE_BITCODE=0 \
+            -DENABLE_ARC=0 \
+            -DENABLE_VISIBILITY=1 \
+            -DDEPLOYMENT_TARGET=15.0 \
+            -DDynamicBinaryInstrument=ON \
+            -DNearBranch=ON \
+            -DPlugin.SymbolResolver=ON \
+            -DPlugin.Darwin.HideLibrary=ON \
+            -DPlugin.Darwin.ObjectiveC=ON
+          make -j4
+          
+          # Копируем результаты в корень проекта для Theos
+          mkdir -p ../../Dobby/include
+          cp libdobby.a ../../Dobby/libdobby.a
+          cp ../include/dobby.h ../../Dobby/include/dobby.h
 
       - name: Build dylib
         run: |
