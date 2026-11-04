@@ -1,0 +1,42 @@
+name: Build StandriseRage
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Theos
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          echo "$HOME/theos/bin" >> $GITHUB_PATH
+
+      - name: iOS SDK
+        run: |
+          cd $THEOS/sdks
+          git clone --depth 1 https://github.com/theos/sdks.git tmp
+          mv tmp/* . && rm -rf tmp
+
+      - name: Build Dobby
+        run: |
+          git clone https://github.com/jmpews/Dobby.git
+          cd Dobby
+          mkdir build && cd build
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/ios.toolchain.cmake -DPLATFORM=OS64 -DARCHS=arm64
+          make -j4
+          cp libdobby.a ../../Dobby/libdobby.a
+
+      - name: Build dylib
+        run: |
+          make clean || true
+          make
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StandriseRage-dylib
+          path: .theos/obj/arm64/StandriseRage.dylib
