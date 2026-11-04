@@ -15,27 +15,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git make clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config
 
-      - name: Install Theos (Official)
+      - name: Install Theos
         run: |
           export THEOS=$HOME/theos
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Download iOS SDK (Zip)
+      - name: Build Dobby
         run: |
-          cd $THEOS/sdks
-          # Качаем SDK одним архивом (быстро, без обрыва связи)
-          wget https://github.com/theos/sdks/archive/refs/heads/master.zip
-          unzip master.zip
-          mv sdks-master/* .
-          rm -rf sdks-master master.zip
-
-      - name: Download Dobby
-        run: |
-          wget https://github.com/jmpews/Dobby/releases/download/v1.0.0/dobby-ios-arm64.a -O Dobby/libdobby.a || true
-          mkdir -p Dobby/include
-          wget https://raw.githubusercontent.com/jmpews/Dobby/master/include/dobby.h -O Dobby/include/dobby.h
+          git clone https://github.com/jmpews/Dobby.git
+          cd Dobby
+          mkdir build && cd build
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/ios.toolchain.cmake -DPLATFORM=OS64 -DARCHS=arm64 -DDobby_STATIC=ON
+          make -j4
+          cp libdobby.a ../../Dobby/libdobby.a
 
       - name: Build dylib
         run: |
