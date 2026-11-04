@@ -13,7 +13,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git make clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config
+          sudo apt-get install -y git make build-essential clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config wget unzip
 
       - name: Install Theos
         run: |
@@ -22,14 +22,11 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Build Dobby
+      - name: Download Dobby
         run: |
-          git clone https://github.com/jmpews/Dobby.git
-          cd Dobby
-          mkdir build && cd build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/ios.toolchain.cmake -DPLATFORM=OS64 -DARCHS=arm64 -DDobby_STATIC=ON
-          make -j4
-          cp libdobby.a ../../Dobby/libdobby.a
+          mkdir -p Dobby/include
+          wget -q https://github.com/DeV144/HuyJIT-ModMenu/raw/main/Dobby/libdobby.a -O Dobby/libdobby.a
+          wget -q https://github.com/DeV144/HuyJIT-ModMenu/raw/main/Dobby/include/dobby.h -O Dobby/include/dobby.h
 
       - name: Build dylib
         run: |
