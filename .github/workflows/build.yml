@@ -15,10 +15,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git make clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config
 
-      - name: Install Theos
+      - name: Install Theos and Toolchain
         run: |
           export THEOS=$HOME/theos
           git clone --recursive https://github.com/theos/theos.git $THEOS
+          # Скачиваем и распаковываем тулчейн для Linux
+          wget https://github.com/theos/toolchain/releases/download/linux-1.0.0/toolchain-linux-x86_64.tar.xz
+          mkdir -p $THEOS/toolchain
+          tar -xf toolchain-linux-x86_64.tar.xz -C $THEOS/toolchain
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
@@ -30,7 +34,6 @@ jobs:
 
       - name: Download Dobby
         run: |
-          # Скачиваем уже собранную версию Dobby под iOS arm64
           wget https://github.com/jmpews/Dobby/releases/download/v1.0.0/dobby-ios-arm64.a -O Dobby/libdobby.a || true
           mkdir -p Dobby/include
           wget https://raw.githubusercontent.com/jmpews/Dobby/master/include/dobby.h -O Dobby/include/dobby.h
