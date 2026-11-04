@@ -15,20 +15,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git make clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config
 
-      - name: Install Theos
+      - name: Install Theos (Official)
         run: |
           export THEOS=$HOME/theos
+          # Официальный установщик сам скачает тулчейн и SDK
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: iOS SDK and Toolchain
+      - name: Install iOS SDK
         run: |
-          # Скачиваем актуальный тулчейн от сообщества
-          wget https://github.com/L1ghtmann/theos-toolchain/releases/download/linux-1.0.0/toolchain-linux-x86_64.tar.xz
-          tar -xf toolchain-linux-x86_64.tar.xz -C $THEOS
-          
-          # Скачиваем SDK
           cd $THEOS/sdks
           git clone --depth 1 https://github.com/theos/sdks.git tmp
           mv tmp/* . && rm -rf tmp
