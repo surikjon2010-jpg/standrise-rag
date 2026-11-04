@@ -18,16 +18,18 @@ jobs:
       - name: Install Theos (Official)
         run: |
           export THEOS=$HOME/theos
-          # Официальный установщик сам скачает тулчейн и SDK
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Install iOS SDK
+      - name: Download iOS SDK (Zip)
         run: |
           cd $THEOS/sdks
-          git clone --depth 1 https://github.com/theos/sdks.git tmp
-          mv tmp/* . && rm -rf tmp
+          # Качаем SDK одним архивом (быстро, без обрыва связи)
+          wget https://github.com/theos/sdks/archive/refs/heads/master.zip
+          unzip master.zip
+          mv sdks-master/* .
+          rm -rf sdks-master master.zip
 
       - name: Download Dobby
         run: |
