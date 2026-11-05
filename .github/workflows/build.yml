@@ -22,18 +22,6 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Get Prebuilt Dobby
-        run: |
-          # Клонируем рабочий репозиторий с готовой библиотекой
-          git clone https://github.com/DeV144/Standoff2-AimBot.git --depth 1
-          mkdir -p Dobby/include
-          # Копируем готовую библиотеку и заголовок
-          cp Standoff2-AimBot/Dobby/libdobby.a Dobby/libdobby.a
-          cp Standoff2-AimBot/Dobby/dobby.h Dobby/include/dobby.h
-          
-          # Проверяем, что файл на месте
-          ls -la Dobby/libdobby.a
-
       - name: Build dylib
         run: |
           make clean || true
