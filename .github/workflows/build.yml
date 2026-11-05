@@ -28,7 +28,6 @@ jobs:
           cd Dobby
           mkdir build && cd build
           
-          # Жестко прописываем SDK в флаги компилятора
           cmake .. \
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
@@ -39,8 +38,8 @@ jobs:
             -DCMAKE_AR=/usr/bin/ar \
             -DCMAKE_RANLIB=/usr/bin/ranlib \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_FLAGS="-isysroot $THEOS/sdks/iPhoneOS16.5.sdk -arch arm64 -I../source -I../include" \
-            -DCMAKE_CXX_FLAGS="-isysroot $THEOS/sdks/iPhoneOS16.5.sdk -arch arm64 -I../source -I../include"
+            -DCMAKE_C_FLAGS="-isysroot $THEOS/sdks/iPhoneOS16.5.sdk -I$THEOS/sdks/iPhoneOS16.5.sdk/usr/include -I../source -I../include" \
+            -DCMAKE_CXX_FLAGS="-isysroot $THEOS/sdks/iPhoneOS16.5.sdk -I$THEOS/sdks/iPhoneOS16.5.sdk/usr/include -I../source -I../include"
             
           make dobby_static -j4
           
