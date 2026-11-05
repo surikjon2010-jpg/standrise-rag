@@ -22,18 +22,30 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Get Dobby Prebuilt
+      - name: Build Dobby via CMake
         run: |
-          # Клонируем репозиторий с готовой библиотекой
-          git clone https://github.com/DeV144/HuyJIT-ModMenu.git --depth 1
+          git clone https://github.com/jmpews/Dobby.git --depth 1
+          cd Dobby
+          mkdir build && cd build
           
-          # Копируем файлы в нашу папку Dobby
-          mkdir -p Dobby/include
-          cp HuyJIT-ModMenu/Dobby/libdobby.a Dobby/libdobby.a
-          cp HuyJIT-ModMenu/Dobby/include/dobby.h Dobby/include/dobby.h
+          # Указываем CMake компилятор, SDK и системный ranlib
+          cmake .. \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_SYSROOT=$THEOS/sdks/iPhoneOS16.5.sdk \
+            -DCMAKE_C_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang \
+            -DCMAKE_CXX_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang++ \
+            -DCMAKE_AR=/usr/bin/ar \
+            -DCMAKE_RANLIB=/usr/bin/ranlib \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_FLAGS="-I../source -I../include" \
+            -DCMAKE_CXX_FLAGS="-I../source -I../include"
+            
+          make -j4
           
-          # Проверяем, что файл на месте
-          ls -la Dobby/libdobby.a
+          mkdir -p ../../Dobby/include
+          cp libdobby.a ../../Dobby/libdobby.a
+          cp ../include/dobby.h ../../Dobby/include/dobby.h
 
       - name: Build dylib
         run: |
