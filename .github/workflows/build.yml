@@ -22,19 +22,47 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Download Dobby Prebuilt
+      - name: Clone Dobby Source
         run: |
+          # Клонируем исходники Dobby
+          git clone https://github.com/jmpews/Dobby.git --depth 1
           mkdir -p Dobby/include
-          wget -q https://github.com/theos/sdks/raw/master/iPhoneOS16.5.sdk/usr/lib/libobjc.tbd -O /dev/null
-          wget -q https://github.com/jmpews/Dobby/releases/download/v1.0.0/dobby-ios-arm64.a -O Dobby/libdobby.a
-          wget -q https://raw.githubusercontent.com/jmpews/Dobby/master/include/dobby.h -O Dobby/include/dobby.h
+          # Копируем заголовочный файл
+          cp Dobby/include/dobby.h Dobby/include/
+          # Копируем файлы исходного кода в папку Dobby для сборки
+          mkdir -p Dobby/src
+          cp -r Dobby/source/* Dobby/src/
+          cp -r Dobby/builtin-plugin Dobby/src/
+          # Создаем простой Makefile для сборки Dobby как статической библиотеки
+          cat << 'EOF' > Dobby/Makefile
+          SRC = $(wildcard src/*.cc) $(wildcard src/*.c) $(wildcard src/*.cpp)
+          OBJ = $(SRC:.cc=.o)
+          OBJ := $(OBJ:.c=.o)
+          OBJ := $(OBJ:.cpp=.o)
+          CFLAGS = -Iinclude -Isrc -fPIC -O2
+          all: libdobby.a
+          libdobby.a: $(OBJ)
+          	ar rcs $@ $^
+          %.o: %.cc
+          	$(CXX) $(CFLAGS) -c $< -o $@
+          %.o: %.c
+          	$(CC) $(CFLAGS) -c $< -o $@
+          %.o: %.cpp
+          	$(CXX) $(CFLAGS) -c $< -o $@
+          clean:
+          	rm -f $(OBJ) libdobby.a
+          EOF
+          cd Dobby
+          make
 
       - name: Build dylib
         run: |
+          # Указываем Theos, где лежит собранная библиотека
+          export LDFLAGS="-L./Dobby -ldobby"
           make clean || true
           make
 
       - uses: actions/upload-artifact@v4
         with:
           name: StandriseRage-dylib
-          path: .theos/obj/arm64/StandriseRage.dylib
+          path: .theos/obj/arm64/StandriseRage.dylibх
