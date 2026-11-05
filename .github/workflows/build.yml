@@ -27,15 +27,14 @@ jobs:
           make clean || true
           make
 
-      - name: Find Files (Debug)
+      - name: Copy file to root
         run: |
-          echo "=== Ищем файлы dylib ==="
-          find . -name "*.dylib"
+          # Копируем именно из папки debug
+          cp .theos/obj/debug/arm64/StandriseRage.dylib ./StandriseRage.dylib
+          ls -la StandriseRage.dylib
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: StandriseRage-dylib
-          # Указываем точный путь, куда Theos кладет файл
-          path: .theos/obj/arm64/StandriseRage.dylib
-          if-no-files-found: warn
+          path: StandriseRage.dylib
