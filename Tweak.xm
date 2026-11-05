@@ -1,22 +1,55 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#include <mach-o/dyld.h>
+#include <substrate.h>
 
-// --- ПОДКЛЮЧАЕМ IL2CPP (Мы будем искать функции по названиям) ---
-// В Theos есть встроенный хедер для этого
-#include <il2cpp-api.h>
+// Оффсеты из dump.cs
+#define OFF_SETVISIBLE 0x5F145F8
+#define OFF_ISLOCAL    0x18E576C
 
-// Глобальные переменные для хуков
-void* (*SetVisible)(void*, int, bool, bool);
-void* (*IsLocal)(void*);
+uintptr_t getRealOffset(uintptr_t offset) {
+    for (uint32_t i = 0; i < _dyld_image_count(); i++) {
+        const char* name = _dyld_get_image_name(i);
+        if (name && strstr(name, "UnityFramework")) {
+            return (uintptr_t)_dyld_get_image_header(i) + offset;
+        }
+    }
+    return 0;
+}
 
-// Тут мы будем искать оффсеты, но для начала просто выведем в лог, что мы загрузились
+// Оригинальные функции
+void (*orig_SetVisible)(void* instance, int camp, bool bVisible, bool forceSync);
+bool (*orig_IsLocal)(void* instance);
+
+// Наши хуки
+void my_SetVisible(void* instance, int camp, bool bVisible, bool forceSync) {
+    if (instance != nullptr) {
+        // Заставляем игру всегда рисовать модель
+        bVisible = true; 
+    }
+    orig_SetVisible(instance, camp, bVisible, forceSync);
+}
+
+bool my_IsLocal(void* instance) {
+    if (instance != nullptr) {
+        return true; // Для аима (пока просто заглушка)
+    }
+    return orig_IsLocal(instance);
+}
+
 __attribute__((constructor))
 static void init() {
-    NSLog(@"[Sabhail Cheat] Dylib загружен в игру!");
+    NSLog(@"[Sabhail Cheat] Dylib loaded!");
     
-    // Поскольку мы не знаем точных адресов, мы просто сообщаем, что мы тут.
-    // В реальности тут должен быть поиск класса через il2cpp_class_from_name.
+    uintptr_t setVisibleAddr = getRealOffset(OFF_SETVISIBLE);
+    uintptr_t isLocalAddr = getRealOffset(OFF_ISLOCAL);
     
-    // ВАЖНО: Чтобы это работало, игра должна быть скомпилирована с поддержкой il2cpp.
-    // Если это не так, код не сработает.
+    if (setVisibleAddr) {
+        MSHookFunction((void*)setVisibleAddr, (void*)my_SetVisible, (void**)&orig_SetVisible);
+        NSLog(@"[Sabhail Cheat] SetVisible hooked!");
+    }
+    if (isLocalAddr) {
+        MSHookFunction((void*)isLocalAddr, (void*)my_IsLocal, (void**)&orig_IsLocal);
+        NSLog(@"[Sabhail Cheat] IsLocal hooked!");
+    }
 }
