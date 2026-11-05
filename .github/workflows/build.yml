@@ -31,7 +31,7 @@ jobs:
           cat << 'EOF' > Makefile
           CC = $(THEOS)/toolchain/linux/iphone/bin/clang
           AR = /usr/bin/ar
-          CFLAGS = -arch arm64 -isysroot $(THEOS)/sdks/iPhoneOS16.5.sdk -Iinclude -Isource -Ibuiltin-plugin -fPIC -O2
+          CFLAGS = -arch arm64 -isysroot $(THEOS)/sdks/iPhoneOS16.5.sdk -Iinclude -Isource -Ibuiltin-plugin -Iexternal -Ithird_party -fPIC -O2
           
           SRC = $(wildcard source/*.c) $(wildcard source/*.cc) $(wildcard source/*.cpp)
           OBJ = $(SRC:.c=.o)
