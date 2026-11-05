@@ -2,8 +2,12 @@
 #import <UIKit/UIKit.h>
 #include <mach-o/dyld.h>
 #include <substrate.h>
+#include <string.h>
 #include <sys/sysctl.h>
-#include <sys/ptrace.h>
+
+// Объявляем ptrace вручную, так как в iOS SDK нет этого хедера
+typedef int (*ptrace_ptr_t)(int _request, pid_t _pid, caddr_t _addr, int _data);
+extern ptrace_ptr_t ptrace;
 
 // Оффсеты ВХ
 #define OFF_SETVISIBLE 0x5F145F8
@@ -19,20 +23,20 @@ uintptr_t getRealOffset(uintptr_t offset) {
     return 0;
 }
 
-// --- БАЙПАСС: Скрываем наш dylib из списка загруженных ---
+// --- БАЙПАСС: Скрываем наш dylib и substrate ---
 const char* (*orig_dyld_get_image_name)(uint32_t image_index);
 const char* my_dyld_get_image_name(uint32_t image_index) {
     const char* name = orig_dyld_get_image_name(image_index);
-    if (name && (strstr(name, "StandriseRage") || strstr(name, "substrate"))) {
-        return "";
+    if (name && (strstr(name, "StandriseRage") || strstr(name, "substrate") || strstr(name, "Cydia"))) {
+        return ""; 
     }
     return name;
 }
 
-// --- БАЙПАСС: Блокируем ptrace (анти-отладка) ---
+// --- БАЙПАСС: Блокируем ptrace ---
 int (*orig_ptrace)(int request, pid_t pid, caddr_t addr, int data);
 int my_ptrace(int request, pid_t pid, caddr_t addr, int data) {
-    if (request == PT_DENY_ATTACH) return 0;
+    if (request == 31) return 0; // 31 = PT_DENY_ATTACH
     return orig_ptrace(request, pid, addr, data);
 }
 
