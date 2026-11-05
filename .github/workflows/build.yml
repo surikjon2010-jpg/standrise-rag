@@ -22,42 +22,18 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Build Dobby Manually
+      - name: Get Dobby Prebuilt
         run: |
-          git clone https://github.com/jmpews/Dobby.git --depth 1
-          cd Dobby
+          # Клонируем репозиторий с готовой библиотекой
+          git clone https://github.com/DeV144/HuyJIT-ModMenu.git --depth 1
           
-          # Создаем простой Makefile для сборки Dobby
-          cat << 'EOF' > Makefile
-          CC = $(THEOS)/toolchain/linux/iphone/bin/clang
-          AR = /usr/bin/ar
-          CFLAGS = -arch arm64 -isysroot $(THEOS)/sdks/iPhoneOS16.5.sdk -Iinclude -Isource -Ibuiltin-plugin -Iexternal -Ithird_party -fPIC -O2
+          # Копируем файлы в нашу папку Dobby
+          mkdir -p Dobby/include
+          cp HuyJIT-ModMenu/Dobby/libdobby.a Dobby/libdobby.a
+          cp HuyJIT-ModMenu/Dobby/include/dobby.h Dobby/include/dobby.h
           
-          SRC = $(wildcard source/*.c) $(wildcard source/*.cc) $(wildcard source/*.cpp)
-          OBJ = $(SRC:.c=.o)
-          OBJ := $(OBJ:.cc=.o)
-          OBJ := $(OBJ:.cpp=.o)
-          
-          all: libdobby.a
-          
-          libdobby.a: $(OBJ)
-          	$(AR) rcs $@ $^
-          
-          %.o: %.c
-          	$(CC) $(CFLAGS) -c $< -o $@
-          	
-          %.o: %.cc
-          	$(CC) $(CFLAGS) -c $< -o $@
-          
-          %.o: %.cpp
-          	$(CC) $(CFLAGS) -c $< -o $@
-          EOF
-          
-          make
-          
-          mkdir -p ../Dobby/include
-          cp libdobby.a ../Dobby/libdobby.a
-          cp include/dobby.h ../Dobby/include/dobby.h
+          # Проверяем, что файл на месте
+          ls -la Dobby/libdobby.a
 
       - name: Build dylib
         run: |
