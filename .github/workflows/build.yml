@@ -27,17 +27,19 @@ jobs:
           git clone https://github.com/jmpews/Dobby.git --depth 1
           cd Dobby
           mkdir build && cd build
-          # Указываем системные ar и ranlib, чтобы обойти отсутствие их в тулчейне Theos
+          
+          # Передаем параметры через переменные окружения
+          export CC="$THEOS/toolchain/linux/iphone/bin/clang -arch arm64 -isysroot $THEOS/sdks/iPhoneOS16.5.sdk"
+          export CXX="$THEOS/toolchain/linux/iphone/bin/clang++ -arch arm64 -isysroot $THEOS/sdks/iPhoneOS16.5.sdk"
+          
           cmake .. \
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_OSX_SYSROOT=$THEOS/sdks/iPhoneOS16.5.sdk \
-            -DCMAKE_C_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang \
-            -DCMAKE_CXX_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang++ \
             -DCMAKE_AR=/usr/bin/ar \
             -DCMAKE_RANLIB=/usr/bin/ranlib \
             -DCMAKE_BUILD_TYPE=Release
           make -j4
+          
           mkdir -p ../../Dobby/include
           cp libdobby.a ../../Dobby/libdobby.a
           cp ../include/dobby.h ../../Dobby/include/dobby.h
