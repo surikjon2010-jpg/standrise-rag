@@ -1,58 +1,42 @@
-name: Build StandriseRage
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+Run git clone https://github.com/jmpews/Dobby.git --depth 1
+Cloning into 'Dobby'...
+CMake Deprecation Warning at CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git make build-essential clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config wget unzip
 
-      - name: Install Theos
-        run: |
-          export THEOS=$HOME/theos
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
-          echo "$HOME/theos/bin" >> $GITHUB_PATH
+-- The C compiler identification is Clang 11.1.0
+-- The CXX compiler identification is Clang 11.1.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /home/runner/theos/toolchain/linux/iphone/bin/clang - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /home/runner/theos/toolchain/linux/iphone/bin/clang++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- The ASM compiler identification is Clang with GNU-like command-line
+-- Found assembler: /home/runner/theos/toolchain/linux/iphone/bin/clang
+-- 
+-- ********* build environment check ***********
+CMake Error at cmake/build_environment_check.cmake:33 (string):
+  string no output variable specified
+Call Stack (most recent call first):
+  CMakeLists.txt:7 (include)
 
-      - name: Build Dobby via CMake
-        run: |
-          git clone https://github.com/jmpews/Dobby.git --depth 1
-          cd Dobby
-          mkdir build && cd build
-          
-          # Указываем CMake компилятор, SDK и системный ranlib
-          cmake .. \
-            -DCMAKE_SYSTEM_NAME=iOS \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_OSX_SYSROOT=$THEOS/sdks/iPhoneOS16.5.sdk \
-            -DCMAKE_C_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang \
-            -DCMAKE_CXX_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang++ \
-            -DCMAKE_AR=/usr/bin/ar \
-            -DCMAKE_RANLIB=/usr/bin/ranlib \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_FLAGS="-I../source -I../include" \
-            -DCMAKE_CXX_FLAGS="-I../source -I../include"
-            
-          make -j4
-          
-          mkdir -p ../../Dobby/include
-          cp libdobby.a ../../Dobby/libdobby.a
-          cp ../include/dobby.h ../../Dobby/include/dobby.h
 
-      - name: Build dylib
-        run: |
-          make clean || true
-          make
+CMake Error at cmake/build_environment_check.cmake:53 (message):
+  Processor not configured
+Call Stack (most recent call first):
+  CMakeLists.txt:7 (include)
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: StandriseRage-dylib
-          path: .theos/obj/arm64/StandriseRage.dylib
+
+-- 	Compiler: 	 Clang
+-- Configuring incomplete, errors occurred!
+Error: Process completed with exit code 1.
