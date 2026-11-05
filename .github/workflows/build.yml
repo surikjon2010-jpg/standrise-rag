@@ -1,33 +1,39 @@
-name: Build StandriseRage
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+name: Patch Dylib
+on: [push, workflow_dispatch]
 
 jobs:
-  build:
+  patch:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Download LSTrial
         run: |
-          sudo apt-get update
-          sudo apt-get install -y git make build-essential clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config wget unzip
+          wget https://github.com/surikjon2010-jpg/standrise-rag/releases/download/v1/LSTrial.dylib -O LSTrial.dylib
 
-      - name: Install Theos
+      - name: Patch file
         run: |
-          export THEOS=$HOME/theos
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
-          echo "$HOME/theos/bin" >> $GITHUB_PATH
+          python3 -c "
+          import os
+          with open('LSTrial.dylib', 'rb') as f:
+              data = f.read()
+          
+          # 1. Меняем название
+          data = data.replace(b'LSTrial', b'Sabhail Cheat')
+          
+          # 2. Убираем спам
+          data = data.replace(b't.me/', b'\x00\x00\x00\x00\x00')
+          
+          # 3. Патчим время
+          data = data.replace(b'Trial expired', b'Hello world')
+          
+          with open('Sabhail_Cheat.dylib', 'wb') as f:
+              f.write(data)
+          "
 
-      - name: Build dylib
-        run: |
-          make clean || true
-          make
-
-      - uses: actions/upload-artifact@v4
+      - name: Upload patched file
+        uses: actions/upload-artifact@v4
         with:
-          name: StandriseRage-dylib
-          path: .theos/obj/arm64/StandriseRage.dylib
+          name: Sabhail_Cheat_dylib
+          path: Sabhail_Cheat.dylib
