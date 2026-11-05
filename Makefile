@@ -7,6 +7,6 @@ TWEAK_NAME = StandriseRage
 StandriseRage_FILES = Tweak.xm
 StandriseRage_CFLAGS = -fobjc-arc
 StandriseRage_FRAMEWORKS = UIKit Foundation
-StandriseRage_LDFLAGS = -undefined dynamic_lookup
+StandriseRage_LIBRARIES = substrate
 
 include $(THEOS_MAKE_PATH)/tweak.mk
