@@ -1,39 +1,14 @@
-name: Patch Dylib
+name: Get Original
 on: [push, workflow_dispatch]
 
 jobs:
-  patch:
+  get:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Download LSTrial
-        run: |
-          wget https://github.com/surikjon2010-jpg/standrise-rag/releases/download/v1/LSTrial.dylib -O LSTrial.dylib
-
-      - name: Patch file
-        run: |
-          python3 -c "
-          import os
-          with open('LSTrial.dylib', 'rb') as f:
-              data = f.read()
-          
-          # 1. Меняем название
-          data = data.replace(b'LSTrial', b'Sabhail Cheat')
-          
-          # 2. Убираем спам
-          data = data.replace(b't.me/', b'\x00\x00\x00\x00\x00')
-          
-          # 3. Патчим время
-          data = data.replace(b'Trial expired', b'Hello world')
-          
-          with open('Sabhail_Cheat.dylib', 'wb') as f:
-              f.write(data)
-          "
-
-      - name: Upload patched file
+      - name: Download
+        run: wget https://github.com/surikjon2010-jpg/standrise-rag/releases/download/v1/LSTrial.dylib -O LSTrial.dylib
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Sabhail_Cheat_dylib
-          path: Sabhail_Cheat.dylib
+          name: Original_Dylib
+          path: LSTrial.dylib
