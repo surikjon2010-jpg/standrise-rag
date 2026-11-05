@@ -1,14 +1,33 @@
-name: Get Original
-on: [push, workflow_dispatch]
+name: Build StandriseRage
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  get:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Download
-        run: wget https://github.com/surikjon2010-jpg/standrise-rag/releases/download/v1/LSTrial.dylib -O LSTrial.dylib
-      - name: Upload
-        uses: actions/upload-artifact@v4
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git make build-essential clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config wget unzip
+
+      - name: Install Theos
+        run: |
+          export THEOS=$HOME/theos
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          echo "$HOME/theos/bin" >> $GITHUB_PATH
+
+      - name: Build dylib
+        run: |
+          make clean || true
+          make
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: Original_Dylib
-          path: LSTrial.dylib
+          name: StandriseRage-dylib
+          path: .theos/obj/arm64/StandriseRage.dylib
