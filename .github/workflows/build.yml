@@ -27,8 +27,15 @@ jobs:
           make clean || true
           make
 
-      - name: Find and Upload Artifact
+      - name: Find Files (Debug)
+        run: |
+          echo "=== Ищем файлы dylib ==="
+          find . -name "*.dylib"
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: StandriseRage-dylib
-          path: "**/*.dylib" # Ищем файл в любой папке
+          # Указываем точный путь, куда Theos кладет файл
+          path: .theos/obj/arm64/StandriseRage.dylib
+          if-no-files-found: warn
