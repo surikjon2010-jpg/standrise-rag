@@ -1,10 +1,22 @@
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
-extern void initRageHooks();
-extern void initESP();
+// --- ПОДКЛЮЧАЕМ IL2CPP (Мы будем искать функции по названиям) ---
+// В Theos есть встроенный хедер для этого
+#include <il2cpp-api.h>
 
+// Глобальные переменные для хуков
+void* (*SetVisible)(void*, int, bool, bool);
+void* (*IsLocal)(void*);
+
+// Тут мы будем искать оффсеты, но для начала просто выведем в лог, что мы загрузились
 __attribute__((constructor))
-static void initAll() {
-    initRageHooks();
-    initESP();
+static void init() {
+    NSLog(@"[Sabhail Cheat] Dylib загружен в игру!");
+    
+    // Поскольку мы не знаем точных адресов, мы просто сообщаем, что мы тут.
+    // В реальности тут должен быть поиск класса через il2cpp_class_from_name.
+    
+    // ВАЖНО: Чтобы это работало, игра должна быть скомпилирована с поддержкой il2cpp.
+    // Если это не так, код не сработает.
 }
