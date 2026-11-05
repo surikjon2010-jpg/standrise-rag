@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 #include <mach-o/dyld.h>
 #include <substrate.h>
+#include <string.h>
 
 // Оффсеты из dump.cs
 #define OFF_SETVISIBLE 0x5F145F8
@@ -17,23 +18,29 @@ uintptr_t getRealOffset(uintptr_t offset) {
     return 0;
 }
 
-// Оригинальные функции
+// --- БАЙПАСС: Скрываем наш dylib из списка загруженных ---
+const char* (*orig_dyld_get_image_name)(uint32_t image_index);
+const char* my_dyld_get_image_name(uint32_t image_index) {
+    const char* name = orig_dyld_get_image_name(image_index);
+    if (name && strstr(name, "StandriseRage")) {
+        return ""; // Возвращаем пустую строку, чтобы античит не видел наш файл
+    }
+    return name;
+}
+
+// --- ХУКИ ДЛЯ ВХ ---
 void (*orig_SetVisible)(void* instance, int camp, bool bVisible, bool forceSync);
 bool (*orig_IsLocal)(void* instance);
 
-// Наши хуки
 void my_SetVisible(void* instance, int camp, bool bVisible, bool forceSync) {
     if (instance != nullptr) {
-        // Заставляем игру всегда рисовать модель
-        bVisible = true; 
+        bVisible = true; // ВХ
     }
     orig_SetVisible(instance, camp, bVisible, forceSync);
 }
 
 bool my_IsLocal(void* instance) {
-    if (instance != nullptr) {
-        return true; // Для аима (пока просто заглушка)
-    }
+    if (instance != nullptr) return true;
     return orig_IsLocal(instance);
 }
 
@@ -41,15 +48,10 @@ __attribute__((constructor))
 static void init() {
     NSLog(@"[Sabhail Cheat] Dylib loaded!");
     
+    // Ставим хуки на ВХ
     uintptr_t setVisibleAddr = getRealOffset(OFF_SETVISIBLE);
-    uintptr_t isLocalAddr = getRealOffset(OFF_ISLOCAL);
+    if (setVisibleAddr) MSHookFunction((void*)setVisibleAddr, (void*)my_SetVisible, (void**)&orig_SetVisible);
     
-    if (setVisibleAddr) {
-        MSHookFunction((void*)setVisibleAddr, (void*)my_SetVisible, (void**)&orig_SetVisible);
-        NSLog(@"[Sabhail Cheat] SetVisible hooked!");
-    }
-    if (isLocalAddr) {
-        MSHookFunction((void*)isLocalAddr, (void*)my_IsLocal, (void**)&orig_IsLocal);
-        NSLog(@"[Sabhail Cheat] IsLocal hooked!");
-    }
+    // Ставим хук на скрытие библиотеки (Байпасс)
+    MSHookFunction((void*)_dyld_get_image_name, (void*)my_dyld_get_image_name, (void**)&orig_dyld_get_image_name);
 }
