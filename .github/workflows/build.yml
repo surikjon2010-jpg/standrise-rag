@@ -22,12 +22,12 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Download Dobby
+      - name: Download Dobby Prebuilt
         run: |
           mkdir -p Dobby/include
-          # Проверенная ссылка на готовую библиотеку
-          wget -q https://github.com/Lef1ex/Dobby-iOS/raw/main/libdobby.a -O Dobby/libdobby.a
-          wget -q https://github.com/Lef1ex/Dobby-iOS/raw/main/dobby.h -O Dobby/include/dobby.h
+          wget -q https://github.com/theos/sdks/raw/master/iPhoneOS16.5.sdk/usr/lib/libobjc.tbd -O /dev/null
+          wget -q https://github.com/jmpews/Dobby/releases/download/v1.0.0/dobby-ios-arm64.a -O Dobby/libdobby.a
+          wget -q https://raw.githubusercontent.com/jmpews/Dobby/master/include/dobby.h -O Dobby/include/dobby.h
 
       - name: Build dylib
         run: |
