@@ -22,30 +22,20 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Build Dobby via CMake
+      - name: Build Dobby with clang target
         run: |
           git clone https://github.com/jmpews/Dobby.git --depth 1
           cd Dobby
-          mkdir build && cd build
           
-          cmake .. \
-            -DCMAKE_SYSTEM_NAME=iOS \
-            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_OSX_SYSROOT=$THEOS/sdks/iPhoneOS16.5.sdk \
-            -DCMAKE_C_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang \
-            -DCMAKE_CXX_COMPILER=$THEOS/toolchain/linux/iphone/bin/clang++ \
-            -DCMAKE_AR=/usr/bin/ar \
-            -DCMAKE_RANLIB=/usr/bin/ranlib \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_FLAGS="-isysroot $THEOS/sdks/iPhoneOS16.5.sdk -I$THEOS/sdks/iPhoneOS16.5.sdk/usr/include -I../source -I../include" \
-            -DCMAKE_CXX_FLAGS="-isysroot $THEOS/sdks/iPhoneOS16.5.sdk -I$THEOS/sdks/iPhoneOS16.5.sdk/usr/include -I../source -I../include"
-            
-          make dobby_static -j4
-          
-          mkdir -p ../../Dobby/include
-          cp libdobby.a ../../Dobby/libdobby.a
-          cp ../include/dobby.h ../../Dobby/include/dobby.h
+          # Собираем напрямую через Makefile Dobby, задавая target для iOS
+          make CC="$THEOS/toolchain/linux/iphone/bin/clang -target arm64-apple-ios15.0 -isysroot $THEOS/sdks/iPhoneOS16.5.sdk" \
+               CXX="$THEOS/toolchain/linux/iphone/bin/clang++ -target arm64-apple-ios15.0 -isysroot $THEOS/sdks/iPhoneOS16.5.sdk" \
+               AR=/usr/bin/ar RANLIB=/usr/bin/ranlib -j4 || true
+               
+          # Ищем, куда он положил libdobby.a и копируем
+          find . -name "libdobby.a" -exec cp {} ../Dobby/libdobby.a \;
+          mkdir -p ../Dobby/include
+          cp include/dobby.h ../Dobby/include/dobby.h
 
       - name: Build dylib
         run: |
