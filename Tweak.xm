@@ -4,9 +4,10 @@
 
 // Хукаем отправку данных
 NSURLSessionDataTask* (*orig_dataTaskWithRequest)(id, SEL, NSURLRequest*, void (^)(NSData*, NSURLResponse*, NSError*));
+
 NSURLSessionDataTask* my_dataTaskWithRequest(id self, SEL _cmd, NSURLRequest *request, void (^completionHandler)(NSData*, NSURLResponse*, NSError*)) {
     
-    // Если это запрос от нашего чита к их серверу
+    // Если это запрос от чита к их серверу
     if (request.URL.absoluteString.length > 0) {
         NSLog(@"[Bypass] Перехвачен запрос: %@", request.URL.absoluteString);
         
@@ -15,10 +16,13 @@ NSURLSessionDataTask* my_dataTaskWithRequest(id self, SEL _cmd, NSURLRequest *re
         NSHTTPURLResponse *fakeResponse = [[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:nil];
         
         // Вызываем completionHandler, чтобы игра думала, что сервер ответил
-        completionHandler(fakeData, fakeResponse, nil);
+        if (completionHandler) {
+            completionHandler(fakeData, fakeResponse, nil);
+        }
         
-        // Возвращаем пустую задачу
-        return [orig_dataTaskWithRequest(self, _cmd, request, completionHandler)];
+        // Возвращаем пустую задачу (заглушку)
+        NSURLSessionDataTask *task = orig_dataTaskWithRequest(self, _cmd, request, completionHandler);
+        return task;
     }
     
     return orig_dataTaskWithRequest(self, _cmd, request, completionHandler);
