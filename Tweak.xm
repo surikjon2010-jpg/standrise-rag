@@ -1,55 +1,31 @@
 #import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
-#include <mach-o/dyld.h>
-#include <substrate.h>
-#include <string.h>
+#import <substrate.h>
+#import <objc/runtime.h>
 
-// Оффсеты ВХ
-#define OFF_SETVISIBLE 0x5F145F8
-#define OFF_ISLOCAL    0x18E576C
-
-uintptr_t getRealOffset(uintptr_t offset) {
-    for (uint32_t i = 0; i < _dyld_image_count(); i++) {
-        const char* name = _dyld_get_image_name(i);
-        if (name && strstr(name, "UnityFramework")) {
-            return (uintptr_t)_dyld_get_image_header(i) + offset;
-        }
+// Хукаем отправку данных
+NSURLSessionDataTask* (*orig_dataTaskWithRequest)(id, SEL, NSURLRequest*, void (^)(NSData*, NSURLResponse*, NSError*));
+NSURLSessionDataTask* my_dataTaskWithRequest(id self, SEL _cmd, NSURLRequest *request, void (^completionHandler)(NSData*, NSURLResponse*, NSError*)) {
+    
+    // Если это запрос от нашего чита к их серверу
+    if (request.URL.absoluteString.length > 0) {
+        NSLog(@"[Bypass] Перехвачен запрос: %@", request.URL.absoluteString);
+        
+        // Возвращаем фейковый ответ, чтобы триал был вечным
+        NSData *fakeData = [@"{\"status\":\"success\",\"trial\":true,\"expire\":9999999999}" dataUsingEncoding:NSUTF8StringEncoding];
+        NSHTTPURLResponse *fakeResponse = [[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:nil];
+        
+        // Вызываем completionHandler, чтобы игра думала, что сервер ответил
+        completionHandler(fakeData, fakeResponse, nil);
+        
+        // Возвращаем пустую задачу
+        return [orig_dataTaskWithRequest(self, _cmd, request, completionHandler)];
     }
-    return 0;
-}
-
-// --- БАЙПАСС: Скрываем наш dylib ---
-const char* (*orig_dyld_get_image_name)(uint32_t image_index);
-const char* my_dyld_get_image_name(uint32_t image_index) {
-    const char* name = orig_dyld_get_image_name(image_index);
-    // Скрываем только наш файл
-    if (name && strstr(name, "StandriseRage")) {
-        return ""; 
-    }
-    return name;
-}
-
-// --- ВХ ---
-void (*orig_SetVisible)(void* instance, int camp, bool bVisible, bool forceSync);
-void my_SetVisible(void* instance, int camp, bool bVisible, bool forceSync) {
-    if (instance != nullptr) bVisible = true;
-    orig_SetVisible(instance, camp, bVisible, forceSync);
-}
-
-bool (*orig_IsLocal)(void* instance);
-bool my_IsLocal(void* instance) {
-    if (instance != nullptr) return true;
-    return orig_IsLocal(instance);
+    
+    return orig_dataTaskWithRequest(self, _cmd, request, completionHandler);
 }
 
 __attribute__((constructor))
 static void init() {
-    NSLog(@"[Sabhail Cheat] Dylib loaded!");
-    
-    // ВХ
-    uintptr_t setVisibleAddr = getRealOffset(OFF_SETVISIBLE);
-    if (setVisibleAddr) MSHookFunction((void*)setVisibleAddr, (void*)my_SetVisible, (void**)&orig_SetVisible);
-    
-    // Байпасс
-    MSHookFunction((void*)_dyld_get_image_name, (void*)my_dyld_get_image_name, (void**)&orig_dyld_get_image_name);
+    // Перехватываем стандартный метод отправки запросов
+    MSHookMessageEx(objc_getClass("NSURLSession"), @selector(dataTaskWithRequest:completionHandler:), (IMP)&my_dataTaskWithRequest, (IMP*)&orig_dataTaskWithRequest);
 }
