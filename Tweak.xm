@@ -1,32 +1,63 @@
 #import <Foundation/Foundation.h>
-#import <substrate.h>
-#import <objc/runtime.h>
+#import <UIKit/UIKit.h>
+#include <mach-o/dyld.h>
+#include <substrate.h>
+#include <string.h>
 
-NSURLSessionDataTask* (*orig_dataTaskWithRequest)(id, SEL, NSURLRequest*, void (^)(NSData*, NSURLResponse*, NSError*));
+// Объявляем ptrace вручную
+typedef int (*ptrace_ptr_t)(int _request, pid_t _pid, caddr_t _addr, int _data);
+extern ptrace_ptr_t ptrace;
 
-NSURLSessionDataTask* my_dataTaskWithRequest(id self, SEL _cmd, NSURLRequest *request, void (^completionHandler)(NSData*, NSURLResponse*, NSError*)) {
-    
-    NSString *urlStr = request.URL.absoluteString;
-    
-    // Проверяем, похож ли запрос на проверку триала
-    if ([urlStr containsString:@"trial"] || [urlStr containsString:@"check"] || [urlStr containsString:@"api"] || [urlStr containsString:@"lstrial"]) {
-        NSLog(@"[Bypass] Заблокирован запрос: %@", urlStr);
-        
-        // Отдаем фейковый ответ
-        NSData *fakeData = [@"{\"status\":\"success\",\"trial\":true,\"expire\":9999999999}" dataUsingEncoding:NSUTF8StringEncoding];
-        NSHTTPURLResponse *fakeResponse = [[NSHTTPURLResponse alloc] initWithURL:request.URL statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:nil];
-        
-        if (completionHandler) {
-            completionHandler(fakeData, fakeResponse, nil);
+#define OFF_SETVISIBLE 0x5F145F8
+#define OFF_ISLOCAL    0x18E576C
+
+uintptr_t getRealOffset(uintptr_t offset) {
+    for (uint32_t i = 0; i < _dyld_image_count(); i++) {
+        const char* name = _dyld_get_image_name(i);
+        if (name && strstr(name, "UnityFramework")) {
+            return (uintptr_t)_dyld_get_image_header(i) + offset;
         }
-        return nil;
     }
-    
-    // Все остальные запросы (игровые) пропускаем
-    return orig_dataTaskWithRequest(self, _cmd, request, completionHandler);
+    return 0;
+}
+
+// Байпасс: Скрываем только НАШ dylib и substrate (LSTrial не трогаем)
+const char* (*orig_dyld_get_image_name)(uint32_t image_index);
+const char* my_dyld_get_image_name(uint32_t image_index) {
+    const char* name = orig_dyld_get_image_name(image_index);
+    if (name && (strstr(name, "Sabhail") || strstr(name, "substrate") || strstr(name, "Cydia"))) {
+        return ""; 
+    }
+    return name;
+}
+
+// Байпасс: Блокируем ptrace
+int (*orig_ptrace)(int request, pid_t pid, caddr_t addr, int data);
+int my_ptrace(int request, pid_t pid, caddr_t addr, int data) {
+    if (request == 31) return 0; // 31 = PT_DENY_ATTACH
+    return orig_ptrace(request, pid, addr, data);
+}
+
+// ВХ
+void (*orig_SetVisible)(void* instance, int camp, bool bVisible, bool forceSync);
+void my_SetVisible(void* instance, int camp, bool bVisible, bool forceSync) {
+    if (instance != nullptr) bVisible = true;
+    orig_SetVisible(instance, camp, bVisible, forceSync);
+}
+
+bool (*orig_IsLocal)(void* instance);
+bool my_IsLocal(void* instance) {
+    if (instance != nullptr) return true;
+    return orig_IsLocal(instance);
 }
 
 __attribute__((constructor))
 static void init() {
-    MSHookMessageEx(objc_getClass("NSURLSession"), @selector(dataTaskWithRequest:completionHandler:), (IMP)&my_dataTaskWithRequest, (IMP*)&orig_dataTaskWithRequest);
+    NSLog(@"[Sabhail Cheat] Dylib loaded!");
+    
+    uintptr_t setVisibleAddr = getRealOffset(OFF_SETVISIBLE);
+    if (setVisibleAddr) MSHookFunction((void*)setVisibleAddr, (void*)my_SetVisible, (void**)&orig_SetVisible);
+    
+    MSHookFunction((void*)_dyld_get_image_name, (void*)my_dyld_get_image_name, (void**)&orig_dyld_get_image_name);
+    MSHookFunction((void*)ptrace, (void*)my_ptrace, (void**)&orig_ptrace);
 }
