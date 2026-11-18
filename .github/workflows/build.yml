@@ -21,17 +21,18 @@ jobs:
           mkdir -p $THEOS
           cd $THEOS
           
-          # Качаем Theos одним архивом (быстро)
           wget -q https://github.com/theos/theos/archive/refs/heads/master.zip
           unzip -q master.zip
           mv theos-master/* .
           rm -rf theos-master master.zip
           
-          # Качаем SDK одним архивом
           wget -q https://github.com/theos/sdks/archive/refs/heads/master.zip
           unzip -q master.zip
           mv sdks-master/* sdks/
           rm -rf sdks-master master.zip
+          
+          # ЗАПУСКАЕМ ОБНОВЛЕНИЕ (чтобы докачать vendor файлы)
+          $THEOS/bin/update-theos
           
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
