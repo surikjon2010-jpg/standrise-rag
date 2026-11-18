@@ -31,7 +31,13 @@ jobs:
           mv sdks-master/* sdks/
           rm -rf sdks-master master.zip
           
-          # ЗАПУСКАЕМ ОБНОВЛЕНИЕ (чтобы докачать vendor файлы)
+          # ФИКС: Инициализируем git репозиторий и добавляем origin
+          git init
+          git remote add origin https://github.com/theos/theos.git
+          git fetch --depth 1
+          git checkout -f master
+          
+          # Теперь обновление пройдет успешно
           $THEOS/bin/update-theos
           
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
