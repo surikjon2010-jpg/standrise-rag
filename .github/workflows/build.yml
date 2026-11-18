@@ -15,34 +15,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git make build-essential clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config wget unzip
 
-      - name: Install Theos and Toolchain
+      - name: Install Theos (Clone)
         run: |
           export THEOS=$HOME/theos
-          mkdir -p $THEOS
-          cd $THEOS
+          git clone --recursive https://github.com/theos/theos.git $THEOS
           
-          wget -q https://github.com/theos/theos/archive/refs/heads/master.zip
-          unzip -q master.zip
-          mv theos-master/* .
-          rm -rf theos-master master.zip
-          
+          # Скачиваем SDK архивом
+          cd $THEOS/sdks
           wget -q https://github.com/theos/sdks/archive/refs/heads/master.zip
           unzip -q master.zip
-          mv sdks-master/* sdks/
+          mv sdks-master/* .
           rm -rf sdks-master master.zip
           
-          # Инициализируем git для update-theos
-          git init
-          git remote add origin https://github.com/theos/theos.git
-          git fetch --depth 1
-          git checkout -f master
-          
-          $THEOS/bin/update-theos
-          
-          # ВРУЧНУЮ КАЧАЕМ ТУЛЧЕЙН (прямая ссылка)
+          # Скачиваем тулчейн напрямую
           mkdir -p $THEOS/toolchain
           cd $THEOS/toolchain
-          wget -q https://github.com/L1ghtmann/theos-toolchain/releases/download/v1.0.0/toolchain-linux-x86_64.tar.xz
+          wget -q https://github.com/theos/toolchain/releases/download/linux-1.0.0/toolchain-linux-x86_64.tar.xz
           tar -xf toolchain-linux-x86_64.tar.xz
           rm toolchain-linux-x86_64.tar.xz
           
