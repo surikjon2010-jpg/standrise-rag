@@ -18,6 +18,8 @@ jobs:
       - name: Install Theos
         run: |
           export THEOS=$HOME/theos
+          # Убираем вызов установщика зависимостей
+          export THEOS_INSTALL_SKIP_DEPS=1
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
@@ -29,8 +31,7 @@ jobs:
 
       - name: Copy file to root
         run: |
-          # Копируем именно из папки debug
-          cp .theos/obj/debug/arm64/StandriseRage.dylib ./StandriseRage.dylib
+          find . -name "StandriseRage.dylib" -exec cp {} ./StandriseRage.dylib \;
           ls -la StandriseRage.dylib
 
       - name: Upload Artifact
