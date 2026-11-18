@@ -15,12 +15,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git make build-essential clang cmake libssl-dev libplist-dev libplist++-dev libgit2-dev libcurl4-openssl-dev zlib1g-dev pkg-config wget unzip
 
-      - name: Install Theos
+      - name: Install Theos (Manual)
         run: |
           export THEOS=$HOME/theos
-          # Убираем вызов установщика зависимостей
-          export THEOS_INSTALL_SKIP_DEPS=1
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          
+          # Скачиваем тулчейн (компилятор)
+          wget -q https://github.com/theos/toolchain/releases/download/linux-1.0.0/toolchain-linux-x86_64.tar.xz
+          tar -xf toolchain-linux-x86_64.tar.xz -C $THEOS
+          
+          # Скачиваем iOS SDK
+          cd $THEOS/sdks
+          git clone --depth 1 https://github.com/theos/sdks.git tmp
+          mv tmp/* . && rm -rf tmp
+          
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
